@@ -1,7 +1,7 @@
 package io.hhplus.tdd.point.service
 
-import io.hhplus.tdd.database.PointHistoryTable
-import io.hhplus.tdd.database.UserPointTable
+import io.hhplus.tdd.point.repo.PointHistoryRepository
+import io.hhplus.tdd.point.repo.UserPointRepository
 import io.hhplus.tdd.point.service.dto.dao.TransactionType
 import io.hhplus.tdd.point.service.dto.dao.UserPoint
 import io.hhplus.tdd.point.service.dto.request.ChargePointRequest
@@ -18,8 +18,9 @@ import org.junit.jupiter.api.Test
 class PointServiceTest {
 
     private lateinit var pointService: PointService
-    private val pointHistoryTable: PointHistoryTable = mockk(relaxed = true)
-    private val userPointTable: UserPointTable = mockk(relaxed = true)
+    private val pointHistoryTable: PointHistoryRepository = mockk(relaxed = true)
+    private val userPointTable: UserPointRepository = mockk(relaxed = true)
+
 
     private val validUserId = 1L
     private val validAmount = 1000L
