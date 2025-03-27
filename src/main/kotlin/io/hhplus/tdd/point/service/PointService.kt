@@ -8,12 +8,15 @@ import io.hhplus.tdd.point.service.dto.dao.UserPoint
 import io.hhplus.tdd.point.service.dto.request.ChargePointRequest
 import io.hhplus.tdd.point.service.dto.request.UsePointRequest
 import org.springframework.stereotype.Service
+import java.util.concurrent.locks.ReentrantLock
 
 @Service
 class PointService(
     private val pointHistoryRepository: PointHistoryRepository,
-    private val userPointRepository: UserPointRepository
-) : PointUseCase {
+    private val userPointRepository: UserPointRepository,
+
+    ) : PointUseCase {
+    private val lock = ReentrantLock()
     override fun getUserPointInfo(userId: Long): UserPoint {
         return userPointRepository.selectById(userId)
     }
@@ -22,12 +25,17 @@ class PointService(
         return pointHistoryRepository.selectAllByUserId(id)
     }
 
-    @Synchronized
     override fun chargePoint(request: ChargePointRequest): UserPoint {
-        val userPoint = userPointRepository.selectById(request.userId)
-        val chargedPoint = userPoint.chargePoint(request.amount)
+        var savedUserPoint: UserPoint
 
-        val savedUserPoint = userPointRepository.insertOrUpdate(chargedPoint.id, chargedPoint.point)
+        lock.lock()
+        try {
+            val userPoint = userPointRepository.selectById(request.userId)
+            val chargedPoint = userPoint.chargePoint(request.amount)
+            savedUserPoint = userPointRepository.insertOrUpdate(chargedPoint.id, chargedPoint.point)
+        } finally {
+            lock.unlock()
+        }
 
         pointHistoryRepository.insert(
             request.userId,
@@ -39,14 +47,25 @@ class PointService(
         return savedUserPoint
     }
 
-    @Synchronized
     override fun usePoint(request: UsePointRequest): UserPoint {
-        val userPoint = userPointRepository.selectById(request.userId)
-        val chargedPoint = userPoint.usePoint(request.amount)
+        var savedUserPoint: UserPoint
 
-        val savedUserPoint = userPointRepository.insertOrUpdate(chargedPoint.id, chargedPoint.point)
+        lock.lock()
+        try {
+            val userPoint = userPointRepository.selectById(request.userId)
+            val usedPoint = userPoint.usePoint(request.amount)
+            savedUserPoint = userPointRepository.insertOrUpdate(usedPoint.id, usedPoint.point)
+        } finally {
+            lock.unlock()
+        }
 
-        pointHistoryRepository.insert(request.userId, request.amount, TransactionType.USE, savedUserPoint.updateMillis)
+        pointHistoryRepository.insert(
+            request.userId,
+            request.amount,
+            TransactionType.USE,
+            savedUserPoint.updateMillis
+        )
+
         return savedUserPoint
     }
 }
