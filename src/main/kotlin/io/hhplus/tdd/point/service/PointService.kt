@@ -22,6 +22,7 @@ class PointService(
         return pointHistoryRepository.selectAllByUserId(id)
     }
 
+    @Synchronized
     override fun chargePoint(request: ChargePointRequest): UserPoint {
         val userPoint = userPointRepository.selectById(request.userId)
         val chargedPoint = userPoint.chargePoint(request.amount)
@@ -38,6 +39,7 @@ class PointService(
         return savedUserPoint
     }
 
+    @Synchronized
     override fun usePoint(request: UsePointRequest): UserPoint {
         val userPoint = userPointRepository.selectById(request.userId)
         val chargedPoint = userPoint.usePoint(request.amount)
